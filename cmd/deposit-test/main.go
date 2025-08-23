@@ -6,95 +6,101 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strings"
 	"time"
 
+	"github.com/herumi/bls-eth-go-binary/bls"
 	"n42-test/internal/deposit" // ← 改成你的真实 module 路径
 )
 
 func main() {
-	// 运行模式
 	var (
-		mode = flag.String("mode", "calc", "calc(只计算) | send(计算+上链发送) | send-bad(故意造错)")
-		// 计算需要的输入
-		blsSkHex   = flag.String("bls-sk", "", "BLS secret key hex (0x...)")
-		pubkeyHex  = flag.String("pubkey", "", "BLS pubkey (48B, 0x...)")
-		wcHex      = flag.String("wc", "", "withdrawal_credentials (32B, 0x...)")
-		amountGwei = flag.Uint64("amount-gwei", 32_000_000_000, "deposit amount in Gwei (32 ETH = 32_000_000_000)")
-		// 发送交易需要的输入
-		rpc      = flag.String("rpc", "http://127.0.0.1:8545", "Ethereum RPC URL")
-		senderPK = flag.String("sender-sk", "", "Sender secp256k1 private key (0x...)")
-		contract = flag.String("contract", "", "Deposit contract address (0x...)")
-		gasLimit = flag.Uint64("gas", 0, "custom gas limit (0 = estimate)")
+		rpc        = flag.String("rpc", "http://127.0.0.1:8545", "执行层 RPC")
+		contract   = flag.String("contract", "", "Deposit 合约地址 (0x...)")
+		senderSK   = flag.String("sender-sk", "", "发送交易的私钥 secp256k1 (0x...)")
+		blsSK      = flag.String("bls-sk", "", "BLS 私钥 (0x...) 用于自动计算 pubkey/签名/root")
+		wcHex      = flag.String("wc", "", "withdrawal_credentials (可选，32B 0x...)")
+		withdrawEA = flag.String("withdraw-addr", "", "提款执行层地址 (可选，20B 0x...)，与 -wc 二选一")
+		amountETH  = flag.Uint64("amount-eth", 32, "质押金额（ETH），默认 32")
+		gasLimit   = flag.Uint64("gas", 0, "GasLimit；0=自动估算")
 	)
 	flag.Parse()
 
-	if *pubkeyHex == "" || *wcHex == "" || *blsSkHex == "" {
-		log.Fatalf("缺少必要参数：-pubkey -wc -bls-sk（BLS）")
+	// 基本参数校验
+	if *contract == "" || *senderSK == "" || *blsSK == "" {
+		log.Fatalf("缺少必填：-contract -sender-sk -bls-sk")
+	}
+	// 处理 WC：优先 -wc；否则用 -withdraw-addr 生成
+	var wc string
+	if *wcHex != "" {
+		wc = *wcHex
+	} else if *withdrawEA != "" {
+		gen, err := deposit.ComputeWithdrawalCredentialsFromEth1(*withdrawEA)
+		if err != nil {
+			log.Fatalf("根据执行层地址生成 wc 失败: %v", err)
+		}
+		wc = gen
+	} else {
+		log.Fatalf("请提供 -wc 或 -withdraw-addr（二选一）")
 	}
 
-	// 计算bls签名和root
-	sigHex, rootHex, err := deposit.ComputeDepositSignatureAndRoot(*pubkeyHex, *wcHex, *amountGwei, *blsSkHex)
+	// === 1) 由 BLS 私钥自动得到 BLS 公钥（48B 压缩） ===
+	bls.Init(bls.BLS12_381)
+	var sk bls.SecretKey
+	if err := sk.SetHexString(strings.TrimPrefix(*blsSK, "0x")); err != nil {
+		log.Fatalf("BLS 私钥解析失败: %v", err)
+	}
+	pk := sk.GetPublicKey()
+	pkBytes := pk.Serialize() // 48B
+	pubkeyHex := "0x" + fmt.Sprintf("%x", pkBytes)
+
+	// === 2) 自动计算 BLS 签名 与 deposit_data_root ===
+	amountGwei := *amountETH * 1_000_000_000
+	sigHex, rootHex, err := deposit.ComputeDepositSignatureAndRoot(pubkeyHex, wc, amountGwei, *blsSK)
 	if err != nil {
-		log.Fatalf("计算签名/root失败： %v", err)
-	}
-	fmt.Println("===计算结果===")
-	fmt.Println("签名: ", sigHex)
-	fmt.Println("root: ", rootHex)
-
-	if *mode == "calc" {
-		// 只计算，不上链
+		log.Fatalf("计算签名/根失败: %v", err)
 	}
 
-	if *senderPK == "" || *contract == "" {
-		log.Fatalf("发送模式需要 -sender-sk（交易私钥）和 -contract（存款合约地址）")
-	}
+	fmt.Println("=== 自动计算结果 ===")
+	fmt.Println("pubkey (48B):", pubkeyHex)
+	fmt.Println("wc     (32B):", wc)
+	fmt.Println("signature  :", sigHex)
+	fmt.Println("root       :", rootHex)
 
-	// 组装depositparams
+	// === 3) 组装并发送交易 ===
+	amountWei := new(big.Int).Mul(big.NewInt(int64(amountGwei)), big.NewInt(1_000_000_000)) // Gwei->Wei
+
 	params := &deposit.DepositParams{
 		Contract:      *contract,
-		PrivateKeyHex: *senderPK,
+		PrivateKeyHex: *senderSK, // 交易签名（secp256k1）
 		RPC:           *rpc,
-		PubkeyHex:     *pubkeyHex,
-		WCHex:         *wcHex,
-		SignatureHex:  sigHex,
-		RootHex:       rootHex,
-		AmountWei:     big.NewInt(0).Mul(big.NewInt(int64(*amountGwei)), big.NewInt(1_000_000_000)),
-		Nonce:         -1,
-		GasLimit:      *gasLimit,
+
+		PubkeyHex:    pubkeyHex,
+		WCHex:        wc,
+		SignatureHex: sigHex,
+		RootHex:      rootHex,
+
+		AmountWei: amountWei,
+		Nonce:     -1,        // 自动
+		GasLimit:  *gasLimit, // 0 = 自动估算
 	}
 
-	// 3) 可选：故意造错，测试链是否正确revert
-	if *mode == "send-bad" {
-		// 改 root 的最后一个字节，制造 root 不匹配 → 预期 receipt.Status = 0
-		if len(params.RootHex) >= 4 {
-			// 简单翻转最后一位十六进制字符
-			last := params.RootHex[len(params.RootHex)-1]
-			if last != '0' {
-				params.RootHex = params.RootHex[:len(params.RootHex)-1] + "0"
-			} else {
-				params.RootHex = params.RootHex[:len(params.RootHex)-1] + "1"
-			}
-			fmt.Println("[WARN] 已故意篡改 root，预期交易执行失败（合约 revert）")
-		}
-	}
-
-	// 创建客户端并发送
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	cli, err := deposit.NewClient(ctx, *rpc, *senderPK)
+	cli, err := deposit.NewClient(ctx, *rpc, *senderSK)
 	if err != nil {
-		log.Fatalf("创建客户端失败：%v", err)
+		log.Fatalf("NewClient 失败: %v", err)
 	}
 	defer cli.Close()
 
 	cli.DebugPrintAccountState(ctx)
 
-	txRes, err := cli.SendDeposit(ctx, params)
+	res, err := cli.SendDeposit(ctx, params)
 	if err != nil {
-		log.Fatalf("发送质押请求失败：%v", err)
+		log.Fatalf("发送质押请求失败: %v", err)
 	}
 	fmt.Println("=== 交易结果 ===")
-	fmt.Printf("TxHash: %s\nNonce: %d\nEstimatedGas: %d\nUsedGas: %d\n",
-		txRes.TxHash, txRes.Nonce, txRes.EstimatedGas, txRes.UsedGas)
+	fmt.Printf("TxHash=%s Nonce=%d EstGas=%d UsedGas=%d\n",
+		res.TxHash, res.Nonce, res.EstimatedGas, res.UsedGas)
 }

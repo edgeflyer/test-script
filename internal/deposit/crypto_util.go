@@ -223,3 +223,25 @@ func ComputeWithdrawalCredentialsFromEth1(executionAddressHex string) (string, e
 	copy(wc[12:], hash[12:])
 	return "0x" + hex.EncodeToString(wc[:]), nil
 }
+
+// 根据 已给定的 signature(96B hex) 计算 deposit_data_root（32B hex）
+func ComputeDepositDataRoot(pubkeyHex string, withdrawalCredHex string, amountGwei uint64, signatureHex string) (string, error) {
+	pubkey, err := decodeExactHex(pubkeyHex, 48)
+	if err != nil {
+		return "", fmt.Errorf("pubkey: %w", err)
+	}
+	wc, err := decodeExactHex(withdrawalCredHex, 32)
+	if err != nil {
+		return "", fmt.Errorf("withdrawal_credentials: %w", err)
+	}
+	sig, err := decodeExactHex(signatureHex, 96)
+	if err != nil {
+		return "", fmt.Errorf("signature: %w", err)
+	}
+
+	ddRoot, err := htrDepositData(pubkey, wc, amountGwei, sig)
+	if err != nil {
+		return "", err
+	}
+	return "0x" + hex.EncodeToString(ddRoot[:]), nil
+}

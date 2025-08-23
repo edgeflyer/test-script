@@ -1,0 +1,76 @@
+{
+  "slot": 389,
+  "eth1_deposit_index": 2,
+  "validators": [
+    {
+      "pubkey": "0xa0b70382269e80251254dc3962c9afd3578f01d31b2b7169a5a4782566e77336d35e4a5e33704b1fba86b58e80e4b804",
+      "withdrawal_credentials": "0x01000000000000000000000016beabc780b50a743689f6ca0159760a26cfc4ed",
+      "effective_balance": 32000000000,
+      "slashed": false,
+      "activation_eligibility_epoch": 6,
+      "activation_epoch": 11,
+      "exit_epoch": 18446744073709551615,
+      "withdrawable_epoch": 18446744073709551615
+    },
+    {
+      "pubkey": "0x8b7e167c7dbd9a8ea15717485bf5e3de738afd0d62af3ed39a5ab7c63845f2b2e94d850f8c66f23c9eb2df8260300fec",
+      "withdrawal_credentials": "0x0100000000000000000000002c8e609ec39432382cc8be6fc68c510f29d0765f",
+      "effective_balance": 32000000000,
+      "slashed": false,
+      "activation_eligibility_epoch": 54,
+      "activation_epoch": 59,
+      "exit_epoch": 18446744073709551615,
+      "withdrawable_epoch": 18446744073709551615
+    }
+  ],
+  "balances": [
+    31827024501,
+    31963570538
+  ],
+  "next_withdrawal_index": 0,
+  "next_withdrawal_validator_index": 0,
+  "pending_partial_withdrawals": [],
+  "earliest_exit_epoch": 0,
+  "exit_balance_to_consume": 0,
+  "eth1_data": {
+    "deposit_root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "deposit_count": 0,
+    "block_hash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "committee_caches": [
+    {
+      "initialized_epoch": null,
+      "shuffling": [],
+      "shuffling_positions": [],
+      "committees_per_slot": 0,
+      "slots_per_epoch": 0
+    },
+    {
+      "initialized_epoch": 77,
+      "shuffling": [
+        0,
+        1
+      ],
+      "shuffling_positions": [
+        1,
+        2
+      ],
+      "committees_per_slot": 1,
+      "slots_per_epoch": 5
+    },
+    {
+      "initialized_epoch": 78,
+      "shuffling": [
+        1,
+        0
+      ],
+      "shuffling_positions": [
+        2,
+        1
+      ],
+      "committees_per_slot": 1,
+      "slots_per_epoch": 5
+    }
+  ],
+  "epoch_attester_indexes": []
+}

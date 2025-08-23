@@ -47,4 +47,6 @@ type TxResult struct {
 	UsedGas      uint64
 	Nonce        uint64
 	EstimatedGas uint64
+	BlockNumber  uint64 // 交易打包的区块号
+	BlockHash    string // 交易所在区块的哈希
 }

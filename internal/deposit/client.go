@@ -224,11 +224,19 @@ func (c *Client) SendDeposit(ctx context.Context, p *DepositParams) (*TxResult, 
 		return &TxResult{TxHash: signedTx.Hash().Hex(), EstimatedGas: gasLimit, Nonce: nonce}, fmt.Errorf("tx sent but waitMined failed: %w", err)
 	}
 
+	// 打印区块信息
+	fmt.Printf("质押交易已上链!\n区块号: %s\n区块哈希: %s\n",
+		receipt.BlockNumber.String(),
+		receipt.BlockHash.Hex(),
+	)
+
 	return &TxResult{
 		TxHash:       signedTx.Hash().Hex(),
 		UsedGas:      receipt.GasUsed,
 		Nonce:        nonce,
 		EstimatedGas: gasLimit,
+		BlockNumber:  receipt.BlockNumber.Uint64(),
+		BlockHash:    receipt.BlockHash.Hex(),
 	}, nil
 }
 
