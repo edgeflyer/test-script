@@ -26,6 +26,7 @@ import (
 
 // ---------------- Domain 常量 ----------------
 
+// 后面需要手动修改domain！！！！！
 var DOMAIN_DEPOSIT = func() [32]byte {
 	var d [32]byte
 	d[0] = 0x03 // 0x03000000 + 28*0x00
@@ -217,10 +218,10 @@ func ComputeWithdrawalCredentialsFromEth1(executionAddressHex string) (string, e
 	if len(addrBytes) != 20 {
 		return "", fmt.Errorf("execution address must be 20 bytes")
 	}
-	hash := sha256.Sum256(addrBytes)
+	// hash := sha256.Sum256(addrBytes)
 	var wc [32]byte
 	wc[0] = 0x01
-	copy(wc[12:], hash[12:])
+	copy(wc[12:], addrBytes)
 	return "0x" + hex.EncodeToString(wc[:]), nil
 }
 

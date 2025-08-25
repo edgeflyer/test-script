@@ -11,7 +11,7 @@ import (
 func main() {
 	c := beaconext.NewClient("http://127.0.0.1:8545")
 
-	eth1Hash := "0x9e6fdcb71d4d56a7df5a5f3703a918ec5f5abb0c7c13479731954ab032a3539a"
+	eth1Hash := "0xa3829090fd0022312949fefa8a3e24ac097c6c92bb27b6d780ad89b4467d8916"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()

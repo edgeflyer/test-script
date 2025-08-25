@@ -1,3 +1,5 @@
+// 质押示例
+
 package main
 
 import (
