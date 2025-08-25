@@ -6,3 +6,6 @@
 - **部署退出合约**
     ``` bash
     go run ./cmd/exitContract
+- **测试带错误BLS签名的质押操作**
+    ```bash
+    go run ./cmd/deposit-test/deposit-sig-tamper
