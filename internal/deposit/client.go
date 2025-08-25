@@ -190,7 +190,7 @@ func (c *Client) SendDeposit(ctx context.Context, p *DepositParams) (*TxResult, 
 			return nil, fmt.Errorf("estimate gas failed: %w", e)
 		}
 		// 稍加 buffer
-		gasLimit = uint64(float64(est)*1.15) + 10000
+		gasLimit = uint64(float64(est)*1.15) + 300000
 	}
 
 	// 构造 EIP-1559 动态费用交易
