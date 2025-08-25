@@ -305,3 +305,98 @@ func (c *Client) DebugPrintAccountState(ctx context.Context) {
 	bal, _ := c.cli.BalanceAt(ctx, c.fromAddr, nil)
 	log.Printf("From: %s Nonce: %d Balance(wei): %s", c.fromAddr.Hex(), nonce, bal.String())
 }
+
+// SendDepositNoWait 组装并发送 deposit 交易（不等待回执）
+func (c *Client) SendDepositNoWait(ctx context.Context, p *DepositParams) (*TxResult, error) {
+	if p.AmountWei == nil || p.AmountWei.Sign() <= 0 {
+		return nil, fmt.Errorf("amount must be > 0 wei")
+	}
+	contract := common.HexToAddress(p.Contract)
+
+	pubkey, wc, sig, root, err := buildDepositArgs(p)
+	if err != nil {
+		return nil, err
+	}
+
+	// ABI pack
+	data, err := c.depositABI.Pack("deposit", pubkey, wc, sig, root)
+	if err != nil {
+		return nil, fmt.Errorf("abi pack failed: %w", err)
+	}
+
+	// nonce
+	var nonce uint64
+	if p.Nonce >= 0 {
+		nonce = uint64(p.Nonce)
+	} else {
+		nonce, err = c.cli.PendingNonceAt(ctx, c.fromAddr)
+		if err != nil {
+			return nil, fmt.Errorf("get nonce failed: %w", err)
+		}
+	}
+
+	// EIP-1559 fee（与原函数保持一致）
+	var maxPriority, maxFee *big.Int
+	if p.MaxPriorityFeePerGas != nil && p.MaxFeePerGas != nil {
+		maxPriority = new(big.Int).Set(p.MaxPriorityFeePerGas)
+		maxFee = new(big.Int).Set(p.MaxFeePerGas)
+	} else {
+		maxPriority, err = c.cli.SuggestGasTipCap(ctx)
+		if err != nil {
+			gp, e2 := c.cli.SuggestGasPrice(ctx)
+			if e2 != nil {
+				return nil, fmt.Errorf("fee suggest failed: %v / %v", err, e2)
+			}
+			maxPriority = gp
+			maxFee = new(big.Int).Mul(gp, big.NewInt(2))
+		} else {
+			maxFee = new(big.Int).Mul(maxPriority, big.NewInt(20))
+		}
+	}
+
+	// gas 估算
+	gasLimit := p.GasLimit
+	if gasLimit == 0 {
+		call := ethereum.CallMsg{
+			From:      c.fromAddr,
+			To:        &contract,
+			GasFeeCap: maxFee,
+			GasTipCap: maxPriority,
+			Value:     p.AmountWei,
+			Data:      data,
+		}
+		est, e := c.cli.EstimateGas(ctx, call)
+		if e != nil {
+			return nil, fmt.Errorf("estimate gas failed: %w", e)
+		}
+		gasLimit = uint64(float64(est)*1.15) + 300000
+	}
+
+	// 构造并签名
+	tx := gethtypes.NewTx(&gethtypes.DynamicFeeTx{
+		ChainID:   c.chainID,
+		Nonce:     nonce,
+		To:        &contract,
+		Value:     p.AmountWei,
+		Data:      data,
+		Gas:       gasLimit,
+		GasTipCap: maxPriority,
+		GasFeeCap: maxFee,
+	})
+	signer := gethtypes.LatestSignerForChainID(c.chainID)
+	signedTx, err := gethtypes.SignTx(tx, signer, c.privKey)
+	if err != nil {
+		return nil, fmt.Errorf("sign tx failed: %w", err)
+	}
+
+	// 只发送，不等待
+	if err := c.cli.SendTransaction(ctx, signedTx); err != nil {
+		return nil, fmt.Errorf("send tx failed: %w", err)
+	}
+
+	return &TxResult{
+		TxHash:       signedTx.Hash().Hex(),
+		EstimatedGas: gasLimit,
+		Nonce:        nonce,
+	}, nil
+}

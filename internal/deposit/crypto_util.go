@@ -167,6 +167,7 @@ func ComputeDepositSignatureAndRoot(
 	blsSkHex string,
 ) (signatureHex string, depositDataRootHex string, err error) {
 
+	EnsureBLS()
 	// 1) 解析 hex
 	pubkey, err := decodeExactHex(pubkeyHex, 48)
 	if err != nil {
@@ -187,7 +188,7 @@ func ComputeDepositSignatureAndRoot(
 	signingRoot := htrSigningData(msgRoot, DOMAIN_DEPOSIT)
 
 	// 4) BLS 签名 (G2，96B)
-	bls.Init(bls.BLS12_381)
+	// bls.Init(bls.BLS12_381)
 	var sk bls.SecretKey
 	if err := sk.SetHexString(strings.TrimPrefix(blsSkHex, "0x")); err != nil {
 		return "", "", fmt.Errorf("set BLS secret key failed: %w", err)
