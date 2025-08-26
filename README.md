@@ -11,7 +11,7 @@
     go run ./cmd/deposit-test/deposit-sig-tamper
 - **批量发送质押请求
     ```bash
-    并发（按顺序输出）
+    并发(并发度不要太高)
     go run ./cmd/deposit-test/deposit-batch \
   -json ./deposit-data.json \
   -rpc http://127.0.0.1:8545 \
@@ -19,9 +19,10 @@
   -mode concurrent \
   -workers 8 \
   -amount-eth 32 \
-  -limit 20
-  -no-wait
-    ```bash
+  -limit 20 \
+  -no-wait \
+  -start 0
+
     严格顺序逐条发送
     go run ./cmd/deposit-test/deposit-batch \
   -json ./deposit-data.json \
@@ -30,4 +31,22 @@
   -mode sequential \
   -amount-eth 32 \
   -limit 20
+
+- **批量发送退出请求**
+    ```bash
+  并发
+  go run ./cmd/exit-test/exit-batch \
+  -json ./deposit-data.json \
+  -rpc http://127.0.0.1:8545 \
+  -contract 0x00000961Ef480Eb55e80D19ad83579A64c007002 \
+  -mode concurrent -workers 20 -start 0 -limit 20 \
+  -wait=false
+  
+  顺序执行
+  go run ./cmd/exit-test/exit-batch \
+  -json ./deposit-data.json \
+  -rpc http://127.0.0.1:8545 \
+  -contract 0x00000961Ef480Eb55e80D19ad83579A64c007002
+  
+
 

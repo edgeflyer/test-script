@@ -28,9 +28,13 @@ import (
 
 // 后面需要手动修改domain！！！！！
 var DOMAIN_DEPOSIT = func() [32]byte {
-	var d [32]byte
-	d[0] = 0x03 // 0x03000000 + 28*0x00
-	return d
+	b, err := hex.DecodeString("03000000f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a9")
+	if err != nil {
+		panic("invalid DOMAIN_DEPOSIT hex")
+	}
+	var arr [32]byte
+	copy(arr[:], b)
+	return arr
 }()
 
 // ---------------- SSZ 基础工具 ----------------
