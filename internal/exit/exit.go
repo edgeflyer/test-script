@@ -105,6 +105,8 @@ func SendExitRequest(
 		estGas = 150_000
 	}
 
+	estGas = uint64(float64(estGas) * 10)
+
 	// 公共参数
 	chainID, err := cli.NetworkID(ctx)
 	if err != nil {
