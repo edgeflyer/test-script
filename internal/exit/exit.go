@@ -115,6 +115,7 @@ func SendExitRequest(
 		if gperr != nil {
 			return nil, fmt.Errorf("suggest gas: %v", gperr)
 		}
+		gp.Mul(gp, big.NewInt(10))
 		return types.NewTx(&types.LegacyTx{
 			Nonce:    nonce,
 			To:       &contract,
@@ -133,7 +134,7 @@ func SendExitRequest(
 		if herr != nil || h.BaseFee == nil {
 			return makeLegacy(nonce) // 回退 legacy
 		}
-		feeCap := new(big.Int).Mul(h.BaseFee, big.NewInt(2))
+		feeCap := new(big.Int).Mul(h.BaseFee, big.NewInt(10))
 		feeCap.Add(feeCap, tipCap)
 		return types.NewTx(&types.DynamicFeeTx{
 			ChainID:   chainID,
