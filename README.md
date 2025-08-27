@@ -48,5 +48,8 @@
   -rpc http://127.0.0.1:8545 \
   -contract 0x00000961Ef480Eb55e80D19ad83579A64c007002
   
+- **运行验证者客户端（见证）**
+  ```bash
+  go run ./cmd/attestion-test
 
 
