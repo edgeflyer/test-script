@@ -1,18 +1,29 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"n42-test/internal/validator"
 )
 
 func main() {
-	// 你的 BLS 私钥（hex）
-	priv := "3b66b65afd0ef2276dec8ae8573c7daf93bdf3ec53070b73dff2766b4b0d97b0"
+	// 运行时输入 BLS 私钥
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("请输入 BLS 私钥 (hex): ")
+	priv, _ := reader.ReadString('\n')
+	priv = strings.TrimSpace(priv) // 去掉换行符
 
-	// 若你的二进制需要 RPC_URL，就填上；否则传空字符串即可
-	rpcURL := "ws://127.0.0.1:8546" // 或 "http://127.0.0.1:8545"，不需要就设 ""
+	if priv == "" {
+		log.Fatal("必须输入私钥！")
+	}
+
+	// RPC URL 你可以写死，或者也提示输入
+	rpcURL := "ws://127.0.0.1:8546"
 	httpURL := "http://127.0.0.1:8545"
 
 	if err := validator.ValidateStreamFiltered(context.Background(), priv, rpcURL, httpURL); err != nil {

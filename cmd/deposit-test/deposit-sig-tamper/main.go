@@ -15,12 +15,12 @@ import (
 const (
 	RPC       = "http://127.0.0.1:8545"
 	CONTRACT  = "0x5FbDB2315678afecb367f032d93F642f64180aa3"                         // 本地/测试链 Deposit 合约地址
-	SENDER_SK = "0xb92ff166924e164aa9e3103ba4154dd86cff1138a97742049668e551ab651133" // 用于发交易（EOA），非BLS
+	SENDER_SK = "0xeee5683d17a906cbea293688296ccaf6f25bc1837165e8a73f48d2f33d07da7f" // 用于发交易（EOA），非BLS
 
 	// BLS材料（来自你的验证者生成工具/本地数据）
-	BLS_SK      = "0x402bab1fe4bbcc8e2842cd6d87b98a2595d42d78a5edddaed7c7d13ea8e4074b"
-	PUBKEY_HEX  = "0x8b7e167c7dbd9a8ea15717485bf5e3de738afd0d62af3ed39a5ab7c63845f2b2e94d850f8c66f23c9eb2df8260300fec" // 48B
-	WC_HEX      = "0x0100000000000000000000002C8E609ec39432382Cc8be6fC68C510F29D0765F"                                 // 32B(ETH1提款)
+	BLS_SK      = "0x27c327507f888866867cc1178b9c28ecfd29b778abcc898de5374cfed577c1b1"
+	PUBKEY_HEX  = "0x83b63b4aea531b66903d6dccd4b909dea84ea9ddeaa300d63f34da021621684a0e61ecb711001f00a41f1ba1aef1f22b" // 48B
+	WC_HEX      = "0x010000000000000000000000CcC20d447F9196eB009D808BD99A4cc0Ab38eF08"                                 // 32B(ETH1提款)
 	AMOUNT_GWEI = uint64(32_000_000_000)                                                                               // 32 ETH
 )
 

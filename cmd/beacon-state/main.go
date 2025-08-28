@@ -28,7 +28,7 @@ func main() {
 	fmt.Println("输入 eth1 区块哈希（0x + 64位hex），回车查询；输入 q 回车退出。")
 
 	for {
-		fmt.Print("\n请输入 eth1 区块哈希：")
+		fmt.Print("\n请输入 eth1 区块哈希(输入q退出)：")
 		line, _ := in.ReadString('\n')
 		eth1Hash := strings.TrimSpace(line)
 
